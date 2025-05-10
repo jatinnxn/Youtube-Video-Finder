@@ -1,6 +1,7 @@
 streamlit
-speechrecognition
 google-api-python-client
+google-auth
 google-generativeai
-isodate
-pyaudio
+SpeechRecognition
+isodate==0.6.1
+pyaudio; platform_system != 'Windows'
