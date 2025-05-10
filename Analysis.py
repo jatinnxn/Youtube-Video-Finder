@@ -4,11 +4,15 @@ import isodate
 import speech_recognition as sr
 import google.generativeai as genai
 from googleapiclient.discovery import build
+import os
 
 # ================== CONFIG ==================
 YOUTUBE_API_KEY = "AIzaSyAS23pGpiq8lVR2c5cxoEladNM4aAHW0e0"
 GEMINI_API_KEY = "AIzaSyCwM2cBwHC7u9WGnvIPPYn0IdmW5ufM2fc"
 genai.configure(api_key=GEMINI_API_KEY)
+
+# Detect environment
+IS_CLOUD = os.environ.get("STREAMLIT_ENV") == "cloud"
 
 # ================== YOUTUBE SETUP ==================
 youtube = build("youtube", "v3", developerKey=YOUTUBE_API_KEY)
@@ -64,26 +68,26 @@ Return ONLY the best title and video ID.
 Videos:
 {chr(10).join([f"{i+1}. {title}" for i, (vid, title) in enumerate(videos)])}
 """
-
     model = genai.GenerativeModel("gemini-1.5-flash")
     response = model.generate_content(prompt)
     return response.text.strip()
 
 def get_voice_input():
+    if IS_CLOUD:
+        st.warning("🎙️ Voice input is not supported on Streamlit Cloud. Please use text input.")
+        return None
     recognizer = sr.Recognizer()
     with sr.Microphone() as source:
         st.info("🎤 Speak your search query...")
         audio = recognizer.listen(source, phrase_time_limit=7)
         try:
             text = recognizer.recognize_google(audio, language="hi-IN")
-            st.success(f"You said: {text}")  # Show the recognized text immediately
             return text
         except sr.UnknownValueError:
             st.error("Could not understand audio")
-            return None
         except sr.RequestError:
             st.error("Speech service unavailable")
-            return None
+    return None
 
 # ================== STREAMLIT UI ==================
 st.set_page_config(page_title="YouTube Video Finder", layout="centered")
@@ -97,11 +101,10 @@ if input_method == "🎤 Voice":
     if st.button("Record Voice"):
         query = get_voice_input()
         if query:
-            st.success(f"You said: {query}")  # Show immediately after voice input
+            st.success(f"You said: {query}")
 else:
     query = st.text_input("Enter your search query")
 
-# This block ensures that the action happens after voice input and button click.
 if st.button("Find Best Video") and query:
     with st.spinner("Searching and analyzing..."):
         initial_results = search_youtube(query)
@@ -124,7 +127,6 @@ if st.button("Find Best Video") and query:
                 st.subheader("🎯 Gemini AI Suggests:")
                 st.markdown(best_video_info)
 
-                # Try to match a video by title or fallback
                 matched = False
                 for vid, title in filtered_videos:
                     if title in best_video_info:
