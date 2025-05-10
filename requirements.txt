@@ -3,4 +3,3 @@ speechrecognition
 google-api-python-client
 google-generativeai
 isodate
-pyaudio
