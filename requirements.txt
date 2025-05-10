@@ -1,5 +1,5 @@
 streamlit
-speechrecognition
 google-api-python-client
+google-auth
 google-generativeai
 isodate
